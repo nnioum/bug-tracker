@@ -1,6 +1,5 @@
 namespace BugTracker.Api.Models;
 
-/// <summary>Пользователь системы (тимлид, тестировщик или разработчик).</summary>
 public class User
 {
     public int Id { get; set; }
