@@ -1,6 +1,116 @@
-@BugTracker.Api_HostAddress = http://localhost:5100
+@host = http://localhost:5100
 
-GET {{BugTracker.Api_HostAddress}}/weatherforecast/
+###
+POST {{host}}/api/software
+Content-Type: application/json
+
+{
+  "name": "Тестовый проект",
+  "version": "1.0",
+  "repositoryUrl": "https://github.com/example/test",
+  "description": "Первое ПО для проверки"
+}
+
+### 
+GET {{host}}/api/software
+Accept: application/json
+
+### 
+GET {{host}}/api/software/1
+Accept: application/json
+
+### 
+PUT {{host}}/api/software/1
+Content-Type: application/json
+
+{
+  "name": "Тестовый проект (изменён)",
+  "version": "1.1",
+  "repositoryUrl": "https://github.com/example/test",
+  "description": "Описание изменено"
+}
+
+### 
+
+
+GET {{host}}/api/users
 Accept: application/json
 
 ###
+GET {{host}}/api/users?role=Developer
+Accept: application/json
+
+### 
+GET {{host}}/api/users/1
+Accept: application/json
+
+### 
+
+POST {{host}}/api/tickets?createdById=1
+Content-Type: application/json
+
+{
+  "title": "Не работает вход",
+  "description": "После ввода пароля страница не открывается",
+  "stepsToReproduce": "1. Открыть страницу входа 2. Ввести данные 3. Нажать Войти",
+  "priority": 1,
+  "softwareId": 1
+}
+
+### 
+GET {{host}}/api/tickets
+Accept: application/json
+
+### 
+GET {{host}}/api/tickets?status=New&softwareId=1&search=вход
+Accept: application/json
+
+### 
+GET {{host}}/api/tickets/1
+Accept: application/json
+
+### 
+PUT {{host}}/api/tickets/1
+Content-Type: application/json
+
+{
+  "title": "Не работает вход (уточнено)",
+  "description": "После ввода пароля страница остаётся белой",
+  "stepsToReproduce": "1. Открыть страницу входа 2. Ввести данные 3. Нажать Войти",
+  "priority": 0
+}
+
+### 
+POST {{host}}/api/tickets?createdById=1
+Content-Type: application/json
+
+{
+  "title": "Тест",
+  "description": "Тест",
+  "priority": 1,
+  "softwareId": 999
+}
+
+### 
+GET {{host}}/api/tickets/999
+Accept: application/json
+
+
+### 
+GET {{host}}/api/notifications?recipientId=1
+Accept: application/json
+
+### 
+GET {{host}}/api/notifications/unread-count?recipientId=1
+Accept: application/json
+
+### 
+PUT {{host}}/api/notifications/1/read
+
+### 
+
+### 
+DELETE {{host}}/api/tickets/1
+
+### Удалить ПО
+DELETE {{host}}/api/software/1
