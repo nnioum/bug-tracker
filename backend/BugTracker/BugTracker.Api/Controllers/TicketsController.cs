@@ -17,7 +17,6 @@ public class TicketsController : ControllerBase
         _db = db;
     }
 
-    // GET api/tickets?status=New&softwareId=1&search=вход
     [HttpGet]
     public async Task<ActionResult<List<TicketListItemResponse>>> GetAll([FromQuery] TicketFilterRequest filter)
     {
@@ -58,8 +57,7 @@ public class TicketsController : ControllerBase
         return ToResponse(ticket);
     }
 
-    // ВРЕМЕННО: createdById передаётся в адресе (?createdById=1).
-    // Когда будет JWT, берём id из токена и убираем параметр.
+
     [HttpPost]
     public async Task<ActionResult<TicketResponse>> Create(TicketCreateRequest request, [FromQuery] int createdById)
     {
@@ -112,7 +110,6 @@ public class TicketsController : ControllerBase
         return NoContent();
     }
 
-    // Тикет вместе со связанными данными (Include подгружает связи)
     private IQueryable<Ticket> LoadFull()
     {
         return _db.Tickets

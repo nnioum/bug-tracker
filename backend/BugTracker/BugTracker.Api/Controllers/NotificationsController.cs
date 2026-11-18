@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BugTracker.Api.Controllers;
 
-// ВРЕМЕННО: recipientId передаётся в адресе. С JWT будем брать id из токена.
 [ApiController]
 [Route("api/[controller]")]
 public class NotificationsController : ControllerBase
@@ -17,7 +16,6 @@ public class NotificationsController : ControllerBase
         _db = db;
     }
 
-    // GET api/notifications?recipientId=1
     [HttpGet]
     public async Task<ActionResult<List<NotificationResponse>>> GetAll([FromQuery] int recipientId)
     {
@@ -36,7 +34,6 @@ public class NotificationsController : ControllerBase
             }).ToListAsync();
     }
 
-    // GET api/notifications/unread-count?recipientId=1
     [HttpGet("unread-count")]
     public async Task<ActionResult<UnreadCountResponse>> GetUnreadCount([FromQuery] int recipientId)
     {
@@ -44,7 +41,6 @@ public class NotificationsController : ControllerBase
         return new UnreadCountResponse { Count = count };
     }
 
-    // PUT api/notifications/5/read
     [HttpPut("{id}/read")]
     public async Task<ActionResult> MarkAsRead(int id)
     {

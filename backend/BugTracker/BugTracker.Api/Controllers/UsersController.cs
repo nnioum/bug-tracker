@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BugTracker.Api.Controllers;
 
-// Только чтение. Создание пользователей и вход будут в AuthController вместе с JWT.
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
@@ -18,7 +17,6 @@ public class UsersController : ControllerBase
         _db = db;
     }
 
-    // GET api/users?role=Developer  (например, список разработчиков для планирования)
     [HttpGet]
     public async Task<ActionResult<List<UserResponse>>> GetAll([FromQuery] Role? role)
     {
