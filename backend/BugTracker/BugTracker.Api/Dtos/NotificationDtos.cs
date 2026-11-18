@@ -1,4 +1,4 @@
-﻿using BugTracker.Api.Models;
+using BugTracker.Api.Models;
 
 namespace BugTracker.Api.Dtos;
 
@@ -10,4 +10,9 @@ public class NotificationResponse
     public bool IsRead { get; set; }
     public int TicketId { get; set; }
     public string? TicketTitle { get; set; }
+}
+
+public class UnreadCountResponse
+{
+    public int Count { get; set; }
 }

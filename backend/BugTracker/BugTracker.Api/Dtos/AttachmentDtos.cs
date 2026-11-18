@@ -1,4 +1,12 @@
-﻿namespace BugTracker.Api.Dtos;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
+
+namespace BugTracker.Api.Dtos;
+
+public class AttachmentUploadRequest
+{
+    [Required] public IFormFile? File { get; set; }
+}
 
 public class AttachmentResponse
 {
