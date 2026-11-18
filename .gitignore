@@ -1,0 +1,29 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.log
+TestResults/
+
+# Node / React
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+
+# Секреты и окружение
+.env
+appsettings.Development.local.json
+
+# JetBrains Rider / WebStorm
+.idea/
+*.iml
+
+# Загруженные пользователями файлы
+backend/**/uploads/
+
+# ОС
+.DS_Store
+Thumbs.db
