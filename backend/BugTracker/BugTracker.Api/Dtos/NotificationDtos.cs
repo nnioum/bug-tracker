@@ -10,6 +10,8 @@ public class NotificationResponse
     public bool IsRead { get; set; }
     public int TicketId { get; set; }
     public string? TicketTitle { get; set; }
+    public TicketStatus TicketStatus { get; set; }
+    public DateOnly? TicketDeadline { get; set; }
 }
 
 public class UnreadCountResponse

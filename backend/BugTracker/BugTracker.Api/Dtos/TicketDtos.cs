@@ -32,9 +32,28 @@ public class TicketPlanRequest
 
 public class TicketFixRequest
 {
-    [Required, MaxLength(100)] public string FixRelease { get; set; } = string.Empty;
-    [Required, MaxLength(500), Url] public string FixCommitsUrl { get; set; } = string.Empty;
+    [Required, MaxLength(50)]
+    [RegularExpression(@"^\d+(\.\d+)*$", ErrorMessage = "Укажите версию в формате 1.4.1")]
+    public string FixRelease { get; set; } = string.Empty;
+
+    [CommitRefs] public List<string> Commits { get; set; } = new();
     [MaxLength(2000)] public string? FixComment { get; set; }
+}
+
+public class CommitRefsAttribute : ValidationAttribute
+{
+    private static readonly System.Text.RegularExpressions.Regex Pattern =
+        new(@"^(!\d+|[0-9a-fA-F]{7,40}|https?://\S+)$");
+
+    protected override ValidationResult? IsValid(object? value, ValidationContext context)
+    {
+        if (value is not List<string> list || list.Count == 0 || list.All(string.IsNullOrWhiteSpace))
+            return new ValidationResult("Укажите хотя бы один коммит или MR");
+
+        return list.All(x => Pattern.IsMatch(x.Trim()))
+            ? ValidationResult.Success
+            : new ValidationResult("Неверный формат: ожидается !42, хеш коммита или ссылка");
+    }
 }
 
 public class TicketReviewRequest
@@ -89,7 +108,7 @@ public class TicketResponse
     public string? PlanningRationale { get; set; }
 
     public string? FixRelease { get; set; }
-    public string? FixCommitsUrl { get; set; }
+    public List<string> FixCommits { get; set; } = new();
     public string? FixComment { get; set; }
     public string? ReviewResult { get; set; }
 

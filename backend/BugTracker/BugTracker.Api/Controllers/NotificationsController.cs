@@ -30,7 +30,9 @@ public class NotificationsController : ControllerBase
                 CreatedAt = n.CreatedAt,
                 IsRead = n.IsRead,
                 TicketId = n.TicketId,
-                TicketTitle = n.Ticket!.Title
+                TicketTitle = n.Ticket!.Title,
+                TicketStatus = n.Ticket.Status,
+                TicketDeadline = n.Ticket.Deadline
             }).ToListAsync();
     }
 
@@ -39,6 +41,15 @@ public class NotificationsController : ControllerBase
     {
         var count = await _db.Notifications.CountAsync(n => n.RecipientId == recipientId && !n.IsRead);
         return new UnreadCountResponse { Count = count };
+    }
+
+    [HttpPut("read-all")]
+    public async Task<ActionResult> MarkAllAsRead([FromQuery] int recipientId)
+    {
+        await _db.Notifications
+            .Where(n => n.RecipientId == recipientId && !n.IsRead)
+            .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
+        return NoContent();
     }
 
     [HttpPut("{id}/read")]

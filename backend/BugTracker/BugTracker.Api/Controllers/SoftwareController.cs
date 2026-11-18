@@ -47,6 +47,9 @@ public class SoftwareController: ControllerBase
     [HttpPost]
     public async Task<ActionResult<SoftwareResponse>> Create(SoftwareRequest request)
     {
+        if (await NameExists(request.Name, null))
+            return Conflict("ПО с таким названием уже существует");
+
         var newSoftware = new Software
         {
             Name = request.Name,
@@ -67,6 +70,9 @@ public class SoftwareController: ControllerBase
         var software = await _db.Softwares
             .FirstOrDefaultAsync(s => s.Id == id);
         if (software == null) return NotFound();
+
+        if (await NameExists(request.Name, id))
+            return Conflict("ПО с таким названием уже существует");
         
         software.Name = request.Name;
         software.Version = request.Version;
@@ -77,8 +83,14 @@ public class SoftwareController: ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> Delete(int id, [FromQuery] int userId)
     {
+        // Удалять ПО может только тимлид
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null) return BadRequest("Пользователь с таким Id не найден");
+        if (user.Role != Role.TeamLead)
+            return StatusCode(403, "Удалять ПО может только тимлид");
+
         var software = await _db.Softwares
             .FirstOrDefaultAsync(s => s.Id == id);
         if (software == null) return NotFound();
@@ -86,6 +98,13 @@ public class SoftwareController: ControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
+
+    private async Task<bool> NameExists(string name, int? exceptId)
+    {
+        var lower = name.Trim().ToLower();
+        return await _db.Softwares.AnyAsync(s => s.Name.ToLower() == lower && s.Id != exceptId);
+    }
+
     private static SoftwareResponse ToResponse(Software s)
     {
         return new SoftwareResponse

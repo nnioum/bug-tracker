@@ -28,7 +28,15 @@ public class TicketsController : ControllerBase
         if (filter.AssigneeId != null) query = query.Where(t => t.AssigneeId == filter.AssigneeId);
         if (filter.CreatedById != null) query = query.Where(t => t.CreatedById == filter.CreatedById);
         if (!string.IsNullOrWhiteSpace(filter.Search))
-            query = query.Where(t => t.Title.ToLower().Contains(filter.Search.ToLower()));
+        {
+            var text = filter.Search.Trim().ToLower();
+            var digits = text.StartsWith("bug-") ? text[4..] : text;
+
+            if (int.TryParse(digits, out var ticketId))
+                query = query.Where(t => t.Id == ticketId || t.Title.ToLower().Contains(text));
+            else
+                query = query.Where(t => t.Title.ToLower().Contains(text));
+        }
 
         var items = await query
             .OrderByDescending(t => t.CreatedAt)
@@ -77,6 +85,22 @@ public class TicketsController : ControllerBase
         };
 
         _db.Tickets.Add(ticket);
+
+        // Уведомление всем тимлидам о новом тикете
+        var teamLeadIds = await _db.Users
+            .Where(u => u.Role == Role.TeamLead)
+            .Select(u => u.Id)
+            .ToListAsync();
+        foreach (var leadId in teamLeadIds)
+        {
+            _db.Notifications.Add(new Notification
+            {
+                Type = NotificationType.TicketCreated,
+                RecipientId = leadId,
+                Ticket = ticket
+            });
+        }
+
         await _db.SaveChangesAsync();
 
         var created = await LoadFull().AsNoTracking().FirstAsync(t => t.Id == ticket.Id);
@@ -100,10 +124,18 @@ public class TicketsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> Delete(int id, [FromQuery] int userId)
     {
         var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == id);
         if (ticket == null) return NotFound();
+
+        // Удалять может тестировщик, и только тикет в статусе «Новый»
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null) return BadRequest("Пользователь с таким Id не найден");
+        if (user.Role != Role.Tester)
+            return StatusCode(403, "Удалять тикеты может только тестировщик");
+        if (ticket.Status != TicketStatus.New)
+            return Conflict("Удалить можно только тикет в статусе «Новый»");
 
         _db.Tickets.Remove(ticket);
         await _db.SaveChangesAsync();
@@ -139,7 +171,9 @@ public class TicketsController : ControllerBase
             Deadline = t.Deadline,
             PlanningRationale = t.PlanningRationale,
             FixRelease = t.FixRelease,
-            FixCommitsUrl = t.FixCommitsUrl,
+            FixCommits = string.IsNullOrWhiteSpace(t.FixCommitsUrl)
+                ? new List<string>()
+                : t.FixCommitsUrl.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList(),
             FixComment = t.FixComment,
             ReviewResult = t.ReviewResult,
             Attachments = t.Attachments.Select(a => new AttachmentResponse

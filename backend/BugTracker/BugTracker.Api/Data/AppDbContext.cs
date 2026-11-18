@@ -12,4 +12,11 @@ public class AppDbContext: DbContext
     public DbSet<Ticket> Tickets { get; set; }
     public DbSet<Attachment> Attachments { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Software>()
+            .HasIndex(s => s.Name)
+            .IsUnique();
+    }
 }
