@@ -112,5 +112,5 @@ PUT {{host}}/api/notifications/1/read
 ### 
 DELETE {{host}}/api/tickets/1
 
-### Удалить ПО
+###
 DELETE {{host}}/api/software/1

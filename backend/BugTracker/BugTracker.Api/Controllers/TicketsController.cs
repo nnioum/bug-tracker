@@ -86,7 +86,6 @@ public class TicketsController : ControllerBase
 
         _db.Tickets.Add(ticket);
 
-        // Уведомление всем тимлидам о новом тикете
         var teamLeadIds = await _db.Users
             .Where(u => u.Role == Role.TeamLead)
             .Select(u => u.Id)
@@ -129,7 +128,6 @@ public class TicketsController : ControllerBase
         var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == id);
         if (ticket == null) return NotFound();
 
-        // Удалять может тестировщик, и только тикет в статусе «Новый»
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null) return BadRequest("Пользователь с таким Id не найден");
         if (user.Role != Role.Tester)
