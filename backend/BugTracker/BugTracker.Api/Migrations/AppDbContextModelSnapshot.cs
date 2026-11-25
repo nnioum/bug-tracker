@@ -104,6 +104,9 @@ namespace BugTracker.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("Softwares");
                 });
 
