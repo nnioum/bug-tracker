@@ -2,6 +2,9 @@ import { Link, useParams } from 'react-router'
 import { useRef, useState } from 'react'
 import { useAuth } from '../auth/useAuth.js'
 
+const DEMO_TICKET_STORAGE_KEY = 'bugtracker-demo-ticket-12'
+const demoDeveloperName = 'Иванов И.'
+
 const demoTicket = {
     id: 12,
     title: 'Не работает кнопка «Подтвердить заказ»',
@@ -26,12 +29,23 @@ const demoTicket = {
 const statusLabels = {
     New: 'Новый',
     Planned: 'Запланирован',
+    InProgress: 'В работе',
+    Rework: 'На доработке',
+}
+
+function loadDemoTicket() {
+    try {
+        const savedTicket = sessionStorage.getItem(DEMO_TICKET_STORAGE_KEY)
+        return savedTicket ? { ...demoTicket, ...JSON.parse(savedTicket) } : demoTicket
+    } catch {
+        return demoTicket
+    }
 }
 
 export default function TicketDetailsPage() {
     const { ticketId } = useParams()
     const { user } = useAuth()
-    const [ticket, setTicket] = useState(demoTicket)
+    const [ticket, setTicket] = useState(loadDemoTicket)
     const [planErrors, setPlanErrors] = useState({})
     const planDialogRef = useRef(null)
     const planFormRef = useRef(null)
@@ -46,17 +60,30 @@ export default function TicketDetailsPage() {
     }
 
     const canPlan = user?.role === 'TeamLead' && ticket.status === 'New'
+    const canStart = user?.role === 'Developer' && user.name === ticket.assigneeName && ['Planned', 'Rework'].includes(ticket.status)
+
     const formattedDeadline = ticket.deadline ? ticket.deadline.split('-').reverse().join('.') : '—'
 
     const details = [
         ['ПО', ticket.software],
         ['Приоритет', ticket.priority],
         ['Автор', ticket.author],
-        ['Дедлайн', formattedDeadline]
+        ['Дедлайн', formattedDeadline],
         ['Ответственный', ticket.assigneeName || '—'],
         ['Релиз исправления', '—'],
         ['Коммиты / MR', '—'],
     ]
+
+    function saveDemoTicket(nextTicket) {
+        setTicket(nextTicket)
+
+        try {
+            sessionStorage.setItem(DEMO_TICKET_STORAGE_KEY, JSON.stringify(nextTicket))
+        } catch {
+            return
+        }
+    }
+
 
     function openPlanDialog() {
         setPlanErrors({})
@@ -100,15 +127,19 @@ export default function TicketDetailsPage() {
 
         closePlanDialog()
 
-        planDialogRef.current.close()
-
-        setTicket((previousTicket) => ({
-            ...previousTicket,
+        saveDemoTicket({
+            ...ticket,
             deadline,
             assigneeName,
             planningRationale,
             status: 'Planned',
-        }))
+        })
+    }
+
+    function handleStartTicket() {
+        if (canStart) {
+            saveDemoTicket({ ...ticket, status: 'InProgress' })
+        }
     }
 
     return (
@@ -171,6 +202,14 @@ export default function TicketDetailsPage() {
                             </button>
                         </div>
                     )}
+
+                    {canStart && (
+                        <div className="ticket-summary-actions">
+                            <button type="button" className="plan-button" onClick={handleStartTicket}>
+                                Взять в работу
+                            </button>
+                        </div>
+                    )}
                 </aside>
             </div>
 
@@ -210,7 +249,7 @@ export default function TicketDetailsPage() {
                             aria-describedby={planErrors.assignee ? 'plan-assignee-error' : undefined}
                         >
                             <option value="" disabled>Выберите разработчика</option>
-                            <option value="Иванов И.">Иванов И.</option>
+                            <option value={demoDeveloperName}>{demoDeveloperName}</option>
                         </select>
                         {planErrors.assignee && (
                             <p id="plan-assignee-error" className="plan-error">
