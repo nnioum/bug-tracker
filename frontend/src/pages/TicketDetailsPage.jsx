@@ -1,4 +1,6 @@
 import { Link, useParams } from 'react-router'
+import { useRef, useState } from 'react'
+import { useAuth } from '../auth/useAuth.js'
 
 const demoTicket = {
     id: 12,
@@ -11,15 +13,28 @@ const demoTicket = {
         'Заполнить адрес доставки',
         'Нажать «Подтвердить заказ»',
     ],
-    status: 'Новый',
+    status: 'New',
     software: 'Интернет-магазин',
     priority: 'Высокий',
     author: 'Тестировщик А.',
     attachments: ['screenshot.png', 'console.log'],
+    deadline: '',
+    assigneeName: '',
+    planningRationale: '',
+}
+
+const statusLabels = {
+    New: 'Новый',
+    Planned: 'Запланирован',
 }
 
 export default function TicketDetailsPage() {
     const { ticketId } = useParams()
+    const { user } = useAuth()
+    const [ticket, setTicket] = useState(demoTicket)
+    const [planErrors, setPlanErrors] = useState({})
+    const planDialogRef = useRef(null)
+    const planFormRef = useRef(null)
 
     if (ticketId !== String(demoTicket.id)) {
         return (
@@ -30,16 +45,71 @@ export default function TicketDetailsPage() {
         )
     }
 
-    const ticket = demoTicket
+    const canPlan = user?.role === 'TeamLead' && ticket.status === 'New'
+    const formattedDeadline = ticket.deadline ? ticket.deadline.split('-').reverse().join('.') : '—'
+
     const details = [
         ['ПО', ticket.software],
         ['Приоритет', ticket.priority],
         ['Автор', ticket.author],
-        ['Дедлайн', '—'],
-        ['Ответственный', '—'],
+        ['Дедлайн', formattedDeadline]
+        ['Ответственный', ticket.assigneeName || '—'],
         ['Релиз исправления', '—'],
         ['Коммиты / MR', '—'],
     ]
+
+    function openPlanDialog() {
+        setPlanErrors({})
+        planFormRef.current.reset()
+        planDialogRef.current.showModal()
+    }
+
+    function closePlanDialog() {
+        planDialogRef.current.close()
+    }
+
+    function handlePlanSubmit(event) {
+        event.preventDefault()
+
+        const fields = new FormData(event.currentTarget)
+        const deadline = fields.get('deadline')
+        const assigneeName = fields.get('assignee')
+        const planningRationale = fields.get('planningRationale').trim()
+        const today = new Date().toISOString().slice(0, 10)
+        const errors = {}
+
+        if (!deadline) {
+            errors.deadline = 'Укажите дедлайн'
+        } else if (deadline < today) {
+            errors.deadline = 'Дедлайн не может быть раньше сегодняшней даты'
+        }
+
+        if (!assigneeName) {
+            errors.assignee = 'Выберите ответственного'
+        }
+
+        if (!planningRationale) {
+            errors.planningRationale = 'Укажите основание планирования'
+        }
+
+        setPlanErrors(errors)
+
+        if (Object.keys(errors).length > 0) {
+            return
+        }
+
+        closePlanDialog()
+
+        planDialogRef.current.close()
+
+        setTicket((previousTicket) => ({
+            ...previousTicket,
+            deadline,
+            assigneeName,
+            planningRationale,
+            status: 'Planned',
+        }))
+    }
 
     return (
         <article className="ticket-card">
@@ -48,9 +118,7 @@ export default function TicketDetailsPage() {
 
                 <div className="ticket-card-actions">
                     <button type="button" disabled>Редактировать</button>
-                    <button type="button" className="ticket-delete" disabled>
-                        Удалить
-                    </button>
+                    <button type="button" className="ticket-delete" disabled>Удалить</button>
                 </div>
             </header>
 
@@ -58,7 +126,7 @@ export default function TicketDetailsPage() {
                 <div>
                     <div className="ticket-card-heading">
                         <h2>{ticket.title}</h2>
-                        <span className="ticket-status">{ticket.status}</span>
+                        <span className="ticket-status">{statusLabels[ticket.status]}</span>
                     </div>
 
                     <section className="ticket-section">
@@ -86,15 +154,104 @@ export default function TicketDetailsPage() {
                     </section>
                 </div>
 
-                <dl className="ticket-details">
-                    {details.map(([label, value]) => (
-                        <div key={label}>
-                            <dt>{label}</dt>
-                            <dd>{value}</dd>
+                <aside className="ticket-summary">
+                    <dl className="ticket-details">
+                        {details.map(([label, value]) => (
+                            <div key={label}>
+                                <dt>{label}</dt>
+                                <dd>{value}</dd>
+                            </div>
+                        ))}
+                    </dl>
+
+                    {canPlan && (
+                        <div className="ticket-summary-actions">
+                            <button type="button" className="plan-button" onClick={openPlanDialog}>
+                                Запланировать исправление
+                            </button>
                         </div>
-                    ))}
-                </dl>
+                    )}
+                </aside>
             </div>
+
+            <dialog
+                ref={planDialogRef}
+                className="plan-dialog"
+                aria-labelledby="plan-dialog-title"
+            >
+                <form ref={planFormRef} onSubmit={handlePlanSubmit} noValidate>
+                    <h2 id="plan-dialog-title">Запланировать исправление</h2>
+
+                    <div className="plan-field">
+                        <label htmlFor="plan-deadline">Дедлайн</label>
+                        <input
+                            id="plan-deadline"
+                            name="deadline"
+                            type="date"
+                            required
+                            aria-invalid={Boolean(planErrors.deadline)}
+                            aria-describedby={planErrors.deadline ? 'plan-deadline-error' : undefined}
+                        />
+                        {planErrors.deadline && (
+                            <p id="plan-deadline-error" className="plan-error">
+                                {planErrors.deadline}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="plan-field">
+                        <label htmlFor="plan-assignee">Ответственный</label>
+                        <select
+                            id="plan-assignee"
+                            name="assignee"
+                            defaultValue=""
+                            required
+                            aria-invalid={Boolean(planErrors.assignee)}
+                            aria-describedby={planErrors.assignee ? 'plan-assignee-error' : undefined}
+                        >
+                            <option value="" disabled>Выберите разработчика</option>
+                            <option value="Иванов И.">Иванов И.</option>
+                        </select>
+                        {planErrors.assignee && (
+                            <p id="plan-assignee-error" className="plan-error">
+                                {planErrors.assignee}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="plan-field">
+                        <label htmlFor="plan-rationale">Основание / комментарий</label>
+                        <textarea
+                            id="plan-rationale"
+                            name="planningRationale"
+                            placeholder="Почему и в каком порядке исправлять"
+                            rows={3}
+                            maxLength={2000}
+                            required
+                            aria-invalid={Boolean(planErrors.planningRationale)}
+                            aria-describedby={planErrors.planningRationale ? 'plan-rationale-error' : undefined}
+                        />
+                        {planErrors.planningRationale && (
+                            <p id="plan-rationale-error" className="plan-error">
+                                {planErrors.planningRationale}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="plan-dialog-actions">
+                        <button
+                            type="button"
+                            className="plan-button"
+                            onClick={() => planDialogRef.current.close()}
+                        >
+                            Отмена
+                        </button>
+                        <button type="submit" className="plan-button plan-button-primary">
+                            Сохранить
+                        </button>
+                    </div>
+                </form>
+            </dialog>
         </article>
     )
 }
