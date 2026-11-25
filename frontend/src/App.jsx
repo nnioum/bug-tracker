@@ -9,55 +9,63 @@ function AppContent() {
   const { user, logout } = useAuth()
 
   if (!user) {
-    return <LoginPage />
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    )
   }
 
   return (
-    <BrowserRouter>
-      <div className="app-layout">
-        <aside className="sidebar">
-          <p className="sidebar-title">Баг-трекер</p>
+    // <BrowserRouter>  
+    <div className="app-layout">
+      <aside className="sidebar">
+        <p className="sidebar-title">Баг-трекер</p>
 
-          <nav className="sidebar-nav" aria-label="Разделы приложения">
-            <NavLink to="/software">ПО</NavLink>
-            <NavLink to="/tickets">Тикеты</NavLink>
-            <NavLink to="/notifications">Уведомления</NavLink>
-          </nav>
+        <nav className="sidebar-nav" aria-label="Разделы приложения">
+          <NavLink to="/software">ПО</NavLink>
+          <NavLink to="/tickets">Тикеты</NavLink>
+          <NavLink to="/notifications">Уведомления</NavLink>
+        </nav>
 
-          <div className="sidebar-user">
-            <p className="sidebar-role-label">Роль</p>
-            <p className="sidebar-role">{user.roleLabel}</p>
-            <button type="button" className="sidebar-logout" onClick={logout}>
-              Выйти
-            </button>
-          </div>
-        </aside>
+        <div className="sidebar-user">
+          <p className="sidebar-role-label">Роль</p>
+          <p className="sidebar-role">{user.roleLabel}</p>
+          <button type="button" className="sidebar-logout" onClick={logout}>
+            Выйти
+          </button>
+        </div>
+      </aside>
 
-        <main className="page-content">
-          <Routes>
-            <Route path="/" element={<Navigate to="/software" replace />} />
-            <Route path="/software" element={<SoftwarePage />} />
-            <Route path="/tickets" element={
-              <>
-                <h1>Тикеты</h1>
-                <p><Link to="/tickets/12">Открыть тикет BUG-12</Link></p>
-              </>
-            }
-            />
-            <Route path="/tickets/:ticketId" element={<TicketDetailsPage />} />
-            <Route path="/notifications" element={<h1>Уведомления</h1>} />
-            <Route path="*" element={<h1>Страница не найдена</h1>} />
-          </Routes>
-        </main>
-      </div>
-    </BrowserRouter>
+      <main className="page-content">
+        <Routes>
+          <Route path="/" element={<Navigate to="/software" replace />} />
+          <Route path="/login" element={<Navigate to="/software" replace />} />
+          <Route path="/software" element={<SoftwarePage />} />
+          <Route path="/tickets" element={
+            <>
+              <h1>Тикеты</h1>
+              <p><Link to="/tickets/12">Открыть тикет BUG-12</Link></p>
+            </>
+          }
+          />
+          <Route path="/tickets/:ticketId" element={<TicketDetailsPage />} />
+          <Route path="/notifications" element={<h1>Уведомления</h1>} />
+          <Route path="*" element={<h1>Страница не найдена</h1>} />
+        </Routes>
+      </main>
+    </div>
+    // </BrowserRouter>
   )
 }
 
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
     </AuthProvider>
   )
 }
