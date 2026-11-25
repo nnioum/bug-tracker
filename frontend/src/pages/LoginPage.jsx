@@ -6,8 +6,9 @@ export default function LoginPage() {
     const [loginValue, setLoginValue] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
-    function handleSubmit(event) {
+    async function handleSubmit(event) {
         event.preventDefault()
 
         if (!loginValue.trim() || !password) {
@@ -15,8 +16,13 @@ export default function LoginPage() {
             return
         }
 
-        if (!login(loginValue)) {
-            setError('Неверный логин или пароль')
+        setError('')
+        setIsSubmitting(true)
+        const result = await login(loginValue, password)
+        setIsSubmitting(false)
+
+        if (!result.ok) {
+            setError(result.message)
         }
     }
 
@@ -50,7 +56,9 @@ export default function LoginPage() {
 
                 {error && <p className="login-error">{error}</p>}
 
-                <button className="login-button" type="submit">Войти</button>
+                <button className="login-button" type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Входим…' : 'Войти'}
+                </button>
             </form>
         </div>
     )

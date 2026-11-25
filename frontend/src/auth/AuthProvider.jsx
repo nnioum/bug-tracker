@@ -1,12 +1,13 @@
 import { useState } from 'react'
+import { API_URL } from '../api/config.js'
 import { AuthContext } from './auth-context.js'
 
 const STORAGE_KEY = 'bugtracker-user'
 
-const demoUsers = {
-    lead: { name: 'Тимлид', role: 'TeamLead', roleLabel: 'Тимлид' },
-    tester: { name: 'Тестировщик А.', role: 'Tester', roleLabel: 'Тестировщик' },
-    dev: { name: 'Иванов И.', role: 'Developer', roleLabel: 'Разработчик' },
+const roleLabels = {
+    TeamLead: 'Тимлид',
+    Tester: 'Тестировщик',
+    Developer: 'Разработчик',
 }
 
 function loadUser() {
@@ -32,14 +33,39 @@ function saveUser(user) {
 export default function AuthProvider({ children }) {
     const [user, setUser] = useState(loadUser)
 
-    function login(loginValue) {
-        const found = demoUsers[loginValue.trim().toLowerCase()]
-        if (!found) {
-            return false
+    async function login(loginValue, password) {
+        let response
+
+        try {
+            response = await fetch(`${API_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: loginValue.trim(), password }),
+            })
+        } catch {
+            return { ok: false, message: 'Не удалось связаться с сервером' }
         }
-        setUser(found)
-        saveUser(found)
-        return true
+
+        if (response.status === 401) {
+            return { ok: false, message: 'Неверный логин или пароль' }
+        }
+
+        if (!response.ok) {
+            return { ok: false, message: 'Ошибка сервера, попробуйте позже' }
+        }
+
+        const data = await response.json()
+        const nextUser = {
+            id: data.userId,
+            token: data.token,
+            name: data.name,
+            role: data.role,
+            roleLabel: roleLabels[data.role],
+        }
+
+        setUser(nextUser)
+        saveUser(nextUser)
+        return { ok: true }
     }
 
     function logout() {
