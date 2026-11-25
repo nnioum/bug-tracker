@@ -18,7 +18,6 @@ function AppContent() {
   }
 
   return (
-    // <BrowserRouter>  
     <div className="app-layout">
       <aside className="sidebar">
         <p className="sidebar-title">Баг-трекер</p>
@@ -56,7 +55,6 @@ function AppContent() {
         </Routes>
       </main>
     </div>
-    // </BrowserRouter>
   )
 }
 
