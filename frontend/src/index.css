@@ -183,24 +183,27 @@ body {
 .ticket-card-heading h2 {
   margin: 0;
   font-size: 18px;
+  font-size: 20px;
+  line-height: 1.3;
 }
 
 .ticket-status {
-  padding: 3px 8px;
   border: 1px solid #b8c0cc;
   border-radius: 999px;
   background-color: #f0f1f3;
   font-size: 12px;
+  padding: 3px 9px;
+  line-height: 1.2;
 }
 
 .ticket-section {
-  margin-top: 20px;
-  line-height: 1.5;
+  margin-top: 16px;
+  line-height: 1.35;
 }
 
 .ticket-section h3 {
   margin: 0 0 4px;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .ticket-section p,
@@ -216,7 +219,7 @@ body {
 .ticket-attachments {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
   padding: 0;
   list-style: none;
 }
@@ -227,6 +230,7 @@ body {
   color: #4b5563;
   font-size: 13px;
   overflow-wrap: anywhere;
+  width: 152px;
 }
 
 .ticket-details {
@@ -255,8 +259,8 @@ body {
 }
 
 .ticket-attachment-preview {
-  aspect-ratio: 140 / 88;
-  margin-bottom: 4px;
+  aspect-ratio: 152 / 96;
+  margin-bottom: 6px;
   border: 1px solid #b8c0cc;
   border-radius: 6px;
   background-color: #f0f1f3;
@@ -362,4 +366,157 @@ body {
   color: #fff;
   font: inherit;
   cursor: pointer;
+}
+
+.ticket-summary {
+  padding: 18px;
+  border-radius: 8px;
+  background-color: #f0f1f3;
+  min-width: 0;
+  margin-top: 42px;
+}
+
+.ticket-summary .ticket-details {
+  padding: 0;
+  background-color: transparent;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.ticket-summary-actions {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #b8c0cc;
+}
+
+.ticket-summary-actions .plan-button {
+  width: 100%;
+}
+
+.plan-dialog {
+  width: min(560px, calc(100% - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 32px;
+  margin: auto;
+  border: 0;
+  border-radius: 10px;
+  background-color: #fff;
+  color: inherit;
+  overflow-y: auto;
+  color: #111827;
+}
+
+.plan-dialog::backdrop {
+  background-color: rgb(0 0 0 / 50%);
+}
+
+.plan-dialog h2 {
+  margin: 0 0 16px;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.plan-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.plan-field input,
+.plan-field select,
+.plan-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #b8c0cc;
+  border-radius: 6px;
+  color: #111827;
+  font: inherit;
+  background-color: #fff;
+  font-size: 16px;
+}
+
+.plan-field textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.plan-field [aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
+.plan-field input,
+.plan-field select {
+  min-height: 44px;
+}
+
+.plan-field select:invalid,
+.plan-field textarea::placeholder {
+  color: #4b5563;
+}
+
+.plan-field [aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
+.plan-error {
+  margin: 0;
+  color: #dc2626;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.plan-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.plan-button {
+  border: 1px solid #b8c0cc;
+  border-radius: 6px;
+  background-color: #fff;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 20px;
+  color: #111827;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.plan-button-primary {
+  border-color: #1f2937;
+  background-color: #1f2937;
+  color: #fff;
+}
+
+.ticket-card .ticket-card-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 33.3%);
+  gap: 24px;
+  margin-top: 18px;
+  font-size: 16px;
+}
+
+@media (max-width: 900px) {
+  .ticket-card .ticket-card-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-summary {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .plan-dialog {
+    padding: 20px;
+  }
 }
