@@ -24,3 +24,11 @@ public class UserResponse
     public string Login { get; set; } = string.Empty;
     public Role Role { get; set; }
 }
+
+public class RegisterRequest
+{
+    [Required, MaxLength(100)] public string Name { get; set; } = string.Empty;
+    [Required, MaxLength(100)] public string Login { get; set; } = string.Empty;
+    [Required, MinLength(4), MaxLength(200)] public string Password { get; set; } = string.Empty;
+    public Role Role { get; set; }
+}

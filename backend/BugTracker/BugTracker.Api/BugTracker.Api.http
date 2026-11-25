@@ -114,3 +114,45 @@ DELETE {{host}}/api/tickets/1
 
 ###
 DELETE {{host}}/api/software/1
+
+###
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Тимлид Т.",
+  "login": "lead",
+  "password": "1234",
+  "role": "TeamLead"
+}
+
+### 
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Тестировщик А.",
+  "login": "tester",
+  "password": "1234",
+  "role": "Tester"
+}
+
+### 
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Иванов И.",
+  "login": "dev",
+  "password": "1234",
+  "role": "Developer"
+}
+
+### 
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "login": "lead",
+  "password": "1234"
+}
