@@ -2,6 +2,9 @@ import { Link, useParams } from 'react-router'
 import { useRef, useState } from 'react'
 import { useAuth } from '../auth/useAuth.js'
 
+const DEMO_TICKET_STORAGE_KEY = 'bugtracker-demo-ticket-12'
+const demoDeveloperName = 'Иванов И.'
+
 const demoTicket = {
     id: 12,
     title: 'Не работает кнопка «Подтвердить заказ»',
@@ -26,15 +29,29 @@ const demoTicket = {
 const statusLabels = {
     New: 'Новый',
     Planned: 'Запланирован',
+    InProgress: 'В работе',
+    Rework: 'На доработке',
+    InReview: 'На проверке'
+}
+
+function loadDemoTicket() {
+    try {
+        const savedTicket = sessionStorage.getItem(DEMO_TICKET_STORAGE_KEY)
+        return savedTicket ? { ...demoTicket, ...JSON.parse(savedTicket) } : demoTicket
+    } catch {
+        return demoTicket
+    }
 }
 
 export default function TicketDetailsPage() {
     const { ticketId } = useParams()
     const { user } = useAuth()
-    const [ticket, setTicket] = useState(demoTicket)
+    const [ticket, setTicket] = useState(loadDemoTicket)
     const [planErrors, setPlanErrors] = useState({})
     const planDialogRef = useRef(null)
     const planFormRef = useRef(null)
+    const [fixError, setFixError] = useState('')
+    const fixDialogRef = useRef(null)
 
     if (ticketId !== String(demoTicket.id)) {
         return (
@@ -46,17 +63,31 @@ export default function TicketDetailsPage() {
     }
 
     const canPlan = user?.role === 'TeamLead' && ticket.status === 'New'
+    const canStart = user?.role === 'Developer' && user.name === ticket.assigneeName && ['Planned', 'Rework'].includes(ticket.status)
+    const canFix = user?.role === 'Developer' && user.name === ticket.assigneeName && ticket.status === 'InProgress'
+
     const formattedDeadline = ticket.deadline ? ticket.deadline.split('-').reverse().join('.') : '—'
 
     const details = [
         ['ПО', ticket.software],
         ['Приоритет', ticket.priority],
         ['Автор', ticket.author],
-        ['Дедлайн', formattedDeadline]
+        ['Дедлайн', formattedDeadline],
         ['Ответственный', ticket.assigneeName || '—'],
-        ['Релиз исправления', '—'],
-        ['Коммиты / MR', '—'],
+        ['Релиз исправления', ticket.fixRelease || '-'],
+        ['Коммиты / MR', ticket.commits?.join(', ') || '-'],
     ]
+
+    function saveDemoTicket(nextTicket) {
+        setTicket(nextTicket)
+
+        try {
+            sessionStorage.setItem(DEMO_TICKET_STORAGE_KEY, JSON.stringify(nextTicket))
+        } catch {
+            return
+        }
+    }
+
 
     function openPlanDialog() {
         setPlanErrors({})
@@ -100,15 +131,44 @@ export default function TicketDetailsPage() {
 
         closePlanDialog()
 
-        planDialogRef.current.close()
-
-        setTicket((previousTicket) => ({
-            ...previousTicket,
+        saveDemoTicket({
+            ...ticket,
             deadline,
             assigneeName,
             planningRationale,
             status: 'Planned',
-        }))
+        })
+    }
+
+    function handleStartTicket() {
+        if (canStart) {
+            saveDemoTicket({ ...ticket, status: 'InProgress' })
+        }
+    }
+
+    function handleFixSubmit(event) {
+        event.preventDefault()
+        if (!canFix) return
+
+        const fields = new FormData(event.currentTarget)
+        const fixRelease = fields.get('fixRelease').trim()
+        const commits = fields.get('commits').split(/\r?\n/).map((commit) => commit.trim()).filter(Boolean)
+        const fixComment = fields.get('fixComment').trim()
+
+        if (!/^\d+(\.\d+)*$/.test(fixRelease)) {
+            setFixError('Укажи версию в формате 1.4.1')
+            return
+        }
+
+        if (commits.length === 0 || commits.some((commit) => !/^(!\d+|[0-9a-fA-F]{7,40}|https?:\/\/\S+)$/.test(commit))) {
+            setFixError('Укажи хотя бы одну ссылку на PR или хеш коммита')
+            return
+        }
+
+        saveDemoTicket({ ...ticket, fixRelease, commits, fixComment, status: 'InReview' })
+        event.currentTarget.reset()
+        setFixError('')
+        fixDialogRef.current.close()
     }
 
     return (
@@ -171,14 +231,29 @@ export default function TicketDetailsPage() {
                             </button>
                         </div>
                     )}
+
+                    {canStart && (
+                        <div className="ticket-summary-actions">
+                            <button type="button" className="plan-button" onClick={handleStartTicket}>
+                                Взять в работу
+                            </button>
+                        </div>
+                    )}
+
+                    {canFix && (
+                        <div className="ticket-summary-actions">
+                            <button type="button" className="plan-button" onClick={() => {
+                                setFixError('')
+                                fixDialogRef.current.showModal()
+                            }}>
+                                Зафиксировать исправление
+                            </button>
+                        </div>
+                    )}
                 </aside>
             </div>
 
-            <dialog
-                ref={planDialogRef}
-                className="plan-dialog"
-                aria-labelledby="plan-dialog-title"
-            >
+            <dialog ref={planDialogRef} className="plan-dialog" aria-labelledby="plan-dialog-title">
                 <form ref={planFormRef} onSubmit={handlePlanSubmit} noValidate>
                     <h2 id="plan-dialog-title">Запланировать исправление</h2>
 
@@ -210,7 +285,7 @@ export default function TicketDetailsPage() {
                             aria-describedby={planErrors.assignee ? 'plan-assignee-error' : undefined}
                         >
                             <option value="" disabled>Выберите разработчика</option>
-                            <option value="Иванов И.">Иванов И.</option>
+                            <option value={demoDeveloperName}>{demoDeveloperName}</option>
                         </select>
                         {planErrors.assignee && (
                             <p id="plan-assignee-error" className="plan-error">
@@ -239,13 +314,42 @@ export default function TicketDetailsPage() {
                     </div>
 
                     <div className="plan-dialog-actions">
-                        <button
-                            type="button"
-                            className="plan-button"
-                            onClick={() => planDialogRef.current.close()}
-                        >
+                        <button type="button" className="plan-button" onClick={() => planDialogRef.current.close()}>
                             Отмена
                         </button>
+                        <button type="submit" className="plan-button plan-button-primary">
+                            Сохранить
+                        </button>
+                    </div>
+                </form>
+            </dialog>
+
+            <dialog ref={fixDialogRef} className="plan-dialog" aria-labelledby="fix-dialog-title">
+                <form onSubmit={handleFixSubmit} noValidate>
+                    <h2 id="fix-dialog-title">Зафиксировать исправление</h2>
+
+                    <label className="plan-field">
+                        Релиз исправления
+                        <input name="fixRelease" type="text" placeholder="1.4.1" maxLength={50} required />
+                    </label>
+
+                    <label className="plan-field">
+                        Коммиты / MR (по одному на строку)
+                        <textarea name="commits" placeholder="Ссылка на PR или хеш коммита" rows={3} required />
+                    </label>
+
+                    <label className="plan-field">
+                        Комментарий (необязательно)
+                        <textarea name="fixComment" rows={3} maxLength={2000} />
+                    </label>
+
+                    {fixError && <p className="plan-error" role="alert">{fixError}</p>}
+
+                    <div className="plan-dialog-actions">
+                        <button type="button" className="plan-button" onClick={() => fixDialogRef.current.close()}>
+                            Отмена
+                        </button>
+
                         <button type="submit" className="plan-button plan-button-primary">
                             Сохранить
                         </button>
