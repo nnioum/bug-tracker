@@ -1,8 +1,17 @@
 import { BrowserRouter, Link, Navigate, NavLink, Route, Routes } from 'react-router'
+import AuthProvider from './auth/AuthProvider.jsx'
+import { useAuth } from './auth/useAuth.js'
+import LoginPage from './pages/LoginPage.jsx'
 import SoftwarePage from './pages/SoftwarePage.jsx'
 import TicketDetailsPage from './pages/TicketDetailsPage.jsx'
 
-export default function App() {
+function AppContent() {
+  const { user, logout } = useAuth()
+
+  if (!user) {
+    return <LoginPage />
+  }
+
   return (
     <BrowserRouter>
       <div className="app-layout">
@@ -14,6 +23,14 @@ export default function App() {
             <NavLink to="/tickets">Тикеты</NavLink>
             <NavLink to="/notifications">Уведомления</NavLink>
           </nav>
+
+          <div className="sidebar-user">
+            <p className="sidebar-role-label">Роль</p>
+            <p className="sidebar-role">{user.roleLabel}</p>
+            <button type="button" className="sidebar-logout" onClick={logout}>
+              Выйти
+            </button>
+          </div>
         </aside>
 
         <main className="page-content">
@@ -34,5 +51,13 @@ export default function App() {
         </main>
       </div>
     </BrowserRouter>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
